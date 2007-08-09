@@ -11,15 +11,14 @@ BUILDING
 
 For Linux & similar platforms:
 
-To build this code you must download the google-sparsehash package
-(http://code.google.com/p/google-sparsehash/). You may have to update
-the Makefile CFLAGS within this package to properly specify the
-location of the sparsehash header files. Then, simply typing "make" in
-the directory containing this file will build the executable binary.
+Simply typing "make" in the directory containing this file will build
+the executable.  This code depends on the google-sparsehash package
+(http://code.google.com/p/google-sparsehash/). If the build fails, you
+may have to update the CFLAGS within the Makefile to specify the
+location of the sparsehash header files.
 
 If you'd rather not use the google sparsehash library, it is
-straightforward to modify the algorithm to use STL hash_map and
-hash_set in place of the sparsehash implementations.
+straightforward to modify the algorithm to use STL hash_map instead.
 
 DATASET FORMAT
 
@@ -29,7 +28,7 @@ format where each component is encoded as a raw 4-byte integer:
 
 <record id> <number of features> <fid 1> <fid 2> ... <fid n>
 
-(Endiannness of the integers should match that of your platform,
+(Endianness of the integers should match that of your platform,
 e.g. little-endian for Intel x86 architectures.)
 
 Record ids can be arbitrary integers. Feature ids should be assigned
@@ -58,10 +57,20 @@ To run the algorithm, simply type:
 For example, to mine all pairs of vectors with .9 or higher cosine
 similarity from the dblp dataset, you might type:
 
-[~/google-all-pairs-similarity-search]: /ap .9 /mydata/dblp_le.bin > some_file.txt
+[~/google-all-pairs-similarity-search]: /ap .9 dblp_le.bin > some_file.txt
 ; User specified similarity threshold: 0.9
 ; Found 35022 similar pairs.
 ; Candidates considered: 9274991
 ; Vector intersections performed: 2063790
 ; Total running time: 5 seconds
 [~/google-all-pairs-similarity-search]:
+
+The output of the algorithm is text format. Each line will contain a
+pair of vector ids that were found to be similar, followed by the
+actual cosine similarity score.
+
+NOTE: The algorithm is currently configured to use no more than ~1GB
+of main memory. The algorithm will enter an "out of core" mode should
+the dataset require more than this amount of RAM to process in a
+single pass. The constant bounding RAM usage can be changed in main.cc
+as desired.
