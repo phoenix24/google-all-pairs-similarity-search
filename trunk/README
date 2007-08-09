@@ -9,11 +9,13 @@ Similarity Search. In Proc. of the 16th Int'l Conf. on World Wide Web,
 
 BUILDING
 
-To build the code you should also download the google-sparsehash
-package. You may have to update the Makefile CFLAGS within this
-package to properly specify the location of the sparsehash header
-files.  Once you do this, typing "make" in the directory containing
-the code of this package should create the executable.
+For Linux & similar platforms:
+
+To build this code you must download the google-sparsehash package
+(http://code.google.com/p/google-sparsehash/). You may have to update
+the Makefile CFLAGS within this package to properly specify the
+location of the sparsehash header files. Then, simply typing "make" in
+the directory containing this file will build the executable binary.
 
 If you'd rather not use the google sparsehash library, it is
 straightforward to modify the algorithm to use STL hash_map and
