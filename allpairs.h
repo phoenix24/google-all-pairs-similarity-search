@@ -41,19 +41,26 @@
 #ifndef _ALLPAIRS_H_
 #define _ALLPAIRS_H_
 
-#include <stdint.h>
 #include <stdio.h>
 
 #include <string>
 #include <vector>
 
+#ifdef MICROSOFT   // MS VC++ specific code
+typedef unsigned __int32  uint32_t;
+#include <hash_map>   // NOTE we don't use sparsehash with MS VC++!
+#else
+#include <stdint.h>
 #include <google/dense_hash_map>
+#endif
 
 class AllPairs {
  public:
 
   AllPairs() {
+#ifndef MICROSOFT
     candidates_.set_empty_key(ULONG_MAX);
+#endif
   }
 
   // Finds all pairs of vectors in the "data" stream with cosine
@@ -166,13 +173,21 @@ class AllPairs {
   std::vector<PartialVector> partial_vectors_;
   std::vector<InvertedList> inverted_lists_;
 
-  struct Count {
-    Count() : count(0) {}
+  struct Counter {
+    Counter() : count(0) {}
     void increment() { ++count; }
     int count;
   };
 
-  google::dense_hash_map<uint32_t, Count> candidates_;
+#ifdef MICROSOFT
+  typedef stdext::hash_map<uint32_t, Counter> hashmap_t;
+  typedef stdext::hash_map<uint32_t, Counter>::iterator hashmap_iterator_t;
+#else
+  typedef google::dense_hash_map<uint32_t, Counter> hashmap_t;
+  typedef google::dense_hash_map<uint32_t, Counter>::iterator
+  hashmap_iterator_t;
+#endif
+  hashmap_t candidates_;
 };
 
 #endif

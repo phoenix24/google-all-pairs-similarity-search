@@ -7,6 +7,7 @@ R. J. Bayardo, Yiming Ma, Ramakrishnan Srikant. Scaling Up All-Pairs
 Similarity Search. In Proc. of the 16th Int'l Conf. on World Wide Web,
 131-140, 2007. (download from: http://www.bayardo.org/ps/www2007.pdf)
 
+===============================================================================
 BUILDING
 
 For Linux & similar platforms:
@@ -20,6 +21,21 @@ location of the sparsehash header files.
 If you'd rather not use the google sparsehash library, it is
 straightforward to modify the algorithm to use STL hash_map instead.
 
+For Win32 / Microsoft VC++ (studio 8) & a command shell:
+
+NOTE: The build under windows does not exploit (and hence it does not
+require) the Google sparsehash library. Instead it uses the regular
+STL hash_map, which isn't quite as fast but seems to work well
+enough. To build:
+
+C:\google-all-pairs-similarity-search>"%VS80COMNTOOLS%vsvars32.bat"
+
+C:\google-all-pairs-similarity-search>nmake -f Makefile.w32
+
+This produces many warnings, but it seems to work OK. We have not
+tested the Windows executable thoroughly.
+
+===============================================================================
 DATASET FORMAT
 
 The dataset format expected by the algorithm is "apriori binary."  In
@@ -47,15 +63,20 @@ desired.
 You can download the apriori-binary little-endian encoded dblp dataset
 from here: http://www.bayardo.org/bin/dblp_le.bin.gz
 
-
+===============================================================================
 RUNNING THE ALGORITHM
 
-To run the algorithm, simply type:
+To run the algorithm under Linux/Unix:
 
 ./ap <sim_threshold> <dataset_path>
 
+Under Windows:
+
+ap <sim_treshold> <dataset_path>
+
 For example, to mine all pairs of vectors with .9 or higher cosine
-similarity from the dblp dataset, you might type:
+similarity from the dblp dataset on a Linux-type system, you might
+type:
 
 [~/google-all-pairs-similarity-search]: /ap .9 dblp_le.bin > some_file.txt
 ; User specified similarity threshold: 0.9

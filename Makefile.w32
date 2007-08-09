@@ -1,0 +1,18 @@
+# "nmake" makefile for relsat on PC with Miscrosoft VC++
+
+# For optimized executable:
+CFLAGS = /DNDEBUG /DMICROSOFT /O2 /D_FILE_OFFSET_BITS=64
+
+.SUFFIXES: .obj .cpp
+
+OBJS_c =  allpairs.cc
+OBJS_o = $(OBJS_c:.cc=.obj)
+
+ap.exe: $(OBJS_c) $(OBJS_o) main.obj main.cc
+	$(CC) $(LDFLAGS) $(CFLAGS) -o ap $(OBJS_o) main.obj
+
+clean:
+	del *.obj ap.exe
+
+.cc.obj:
+	$(CC) $(CFLAGS) /c $<

@@ -19,6 +19,7 @@
 
 #include "allpairs.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>
@@ -26,6 +27,13 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+
+#include <iostream>
+
+#ifdef MICROSOFT
+#define fseeko _fseeki64 
+#define ftello _ftelli64 
+#endif
 
 namespace {
 
@@ -141,7 +149,11 @@ void AllPairs::Init(double similarity_threshold) {
 void AllPairs::FindMatches(
     uint32_t vector_id,
     const std::vector<uint32_t>& vec) {
+#ifdef MICROSOFT
+  candidates_.clear();
+#else
   candidates_.clear_no_resize();
+#endif
   double vector_size = static_cast<double>(vec.size());
   int min_previous_vector_length =
       static_cast<int>((vector_size * t_squared_) - kFudgeFactor);
@@ -172,7 +184,7 @@ void AllPairs::FindMatches(
       // threshold, so we only increment the counters for elements
       // that are already in the candidate set in order to obtain
       // their partial counts.
-      google::dense_hash_map<uint32_t, Count>::iterator candidate;
+      hashmap_iterator_t candidate;
       for (; k != end_k; ++k) {
         assert(*k != vector_id);
         candidate = candidates_.find(*k);
@@ -187,7 +199,7 @@ void AllPairs::FindMatches(
   // counts, we determine which candidates can potentially meet the
   // threshold, and for those than can, we perform a list intersection
   // to compute the unaccumulated portion of the score.
-  for (google::dense_hash_map<uint32_t, Count>::iterator it = candidates_.begin();
+  for (hashmap_iterator_t it = candidates_.begin();
        it != candidates_.end();
        ++it) {
     PartialVector& il = partial_vectors_[it->first];
