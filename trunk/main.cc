@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
   {
     AllPairs ap;
     bool result = ap.FindAllSimilarPairs(
-        threshold, data, 800000, 600000, 250000000);
+        threshold, data, 800000, 600000, 120000000);
     fclose(data);
     if (!result) {
       std::cerr << "ERROR: "
