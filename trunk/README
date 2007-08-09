@@ -59,5 +59,10 @@ To run the algorithm, simply type:
 For example, to mine all pairs of vectors with .9 or higher cosine
 similarity from the dblp dataset, you might type:
 
-./ap .9 /mydata/dblp_le.bin
-
+[~/google-all-pairs-similarity-search]: /ap .9 /mydata/dblp_le.bin > some_file.txt
+; User specified similarity threshold: 0.9
+; Found 35022 similar pairs.
+; Candidates considered: 9274991
+; Vector intersections performed: 2063790
+; Total running time: 5 seconds
+[~/google-all-pairs-similarity-search]:
