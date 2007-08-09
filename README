@@ -1,0 +1,61 @@
+Welcome to the Google all pairs similarity search package!
+
+This package provides a fast implementation of the "All-Pairs-Binary"
+algorithm described in the following paper:
+
+R. J. Bayardo, Yiming Ma, Ramakrishnan Srikant. Scaling Up All-Pairs
+Similarity Search. In Proc. of the 16th Int'l Conf. on World Wide Web,
+131-140, 2007. (download from: http://www.bayardo.org/ps/www2007.pdf)
+
+BUILDING
+
+To build the code you should also download the google-sparsehash
+package. You may have to update the Makefile CFLAGS within this
+package to properly specify the location of the sparsehash header
+files.  Once you do this, typing "make" in the directory containing
+the code of this package should create the executable.
+
+If you'd rather not use the google sparsehash library, it is
+straightforward to modify the algorithm to use STL hash_map and
+hash_set in place of the sparsehash implementations.
+
+DATASET FORMAT
+
+The dataset format expected by the algorithm is "apriori binary."  In
+an apriori binary encoded dataset, each vector has the following
+format where each component is encoded as a raw 4-byte integer:
+
+<record id> <number of features> <fid 1> <fid 2> ... <fid n>
+
+(Endiannness of the integers should match that of your platform,
+e.g. little-endian for Intel x86 architectures.)
+
+Record ids can be arbitrary integers. Feature ids should be assigned
+such that feature id "i" corresponds to the "ith" least frequently
+occuring feature in the dataset.  For example, the feature with id
+whose integer value is "1" should be the least frequently occurring
+value in the dataset.  Feature ids within a vector should then appear
+in increasing order of their id.
+
+Records in the dataset should appear in order of increasing vector
+size (a vector's size is its number of features.)
+
+It is easy to extend the algorithm to read CSV formatted data if
+desired.
+
+You can download the apriori-binary little-endian encoded dblp dataset
+from the Downloads section of
+http://code.google.com/p/google-all-pairs-similarity-search/
+
+
+RUNNING THE ALGORITHM
+
+To run the algorithm, simply type:
+
+./ap <sim_threshold> <dataset_path>
+
+For example, to mine all pairs of vectors with .9 or higher cosine
+similarity from the dblp dataset, you might type:
+
+./ap .9 /mydata/dblp_le.bin
+
