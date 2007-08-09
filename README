@@ -1,7 +1,7 @@
 Welcome to the Google all pairs similarity search package!
 
-This package provides a fast implementation of the "All-Pairs-Binary"
-algorithm described in the following paper:
+This package provides a bare-bones implementation of the
+"All-Pairs-Binary" algorithm described in the following paper:
 
 R. J. Bayardo, Yiming Ma, Ramakrishnan Srikant. Scaling Up All-Pairs
 Similarity Search. In Proc. of the 16th Int'l Conf. on World Wide Web,
@@ -46,8 +46,7 @@ It is easy to extend the algorithm to read CSV formatted data if
 desired.
 
 You can download the apriori-binary little-endian encoded dblp dataset
-from the Downloads section of
-http://code.google.com/p/google-all-pairs-similarity-search/
+from here: http://www.bayardo.org/bin/dblp_le.bin.gz
 
 
 RUNNING THE ALGORITHM
