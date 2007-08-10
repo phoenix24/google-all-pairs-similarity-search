@@ -3,7 +3,7 @@
 # For optimized executable:
 CFLAGS = /DNDEBUG /DMICROSOFT /O2 /D_FILE_OFFSET_BITS=64
 
-.SUFFIXES: .obj .cpp
+.SUFFIXES: .obj .cc
 
 OBJS_c =  allpairs.cc
 OBJS_o = $(OBJS_c:.cc=.obj)
