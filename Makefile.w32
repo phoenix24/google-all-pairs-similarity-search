@@ -1,7 +1,7 @@
-# "nmake" makefile for all-similar-pairs on PC with Miscrosoft VC++
+# "nmake" makefile for all-similar-pairs on PC with Microsoft VC++ v9
 
 # For optimized executable:
-CFLAGS = /DNDEBUG /DMICROSOFT /O2 /D_FILE_OFFSET_BITS=64
+CFLAGS = /DNDEBUG /DMICROSOFT /O2 /D_FILE_OFFSET_BITS=64 /EHsc
 
 .SUFFIXES: .obj .cc
 
@@ -9,7 +9,7 @@ OBJS_c =  allpairs.cc data-source-iterator.cc
 OBJS_o = $(OBJS_c:.cc=.obj)
 
 ap.exe: $(OBJS_c) $(OBJS_o) main.obj main.cc
-	$(CC) $(LDFLAGS) $(CFLAGS) -o ap $(OBJS_o) main.obj
+	$(CC) $(LDFLAGS) $(CFLAGS) /Feap.exe main.obj $(OBJS_o)
 
 clean:
 	del *.obj ap.exe

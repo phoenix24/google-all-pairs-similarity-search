@@ -10,7 +10,7 @@ Similarity Search. In Proc. of the 16th Int'l Conf. on World Wide Web,
 ===============================================================================
 BUILDING
 
-For Linux & similar platforms:
+*** For Linux & similar platforms ***
 
 Simply typing "make" in the directory containing this file will build
 the executable.  This code depends on the google-sparsehash package
@@ -21,19 +21,16 @@ location of the sparsehash header files.
 If you'd rather not use the google sparsehash library, it is
 straightforward to modify the algorithm to use STL hash_map instead.
 
-For Win32 / Microsoft VC++ (studio 8) & a command shell:
+*** For Win32 / Microsoft VC++ v9 & a command shell ***
 
 NOTE: The build under windows does not exploit (and hence it does not
 require) the Google sparsehash library. Instead it uses the regular
 STL hash_map, which isn't quite as fast but seems to work well
 enough. To build:
 
-C:\google-all-pairs-similarity-search>"%VS80COMNTOOLS%vsvars32.bat"
+C:\google-all-pairs-similarity-search>"%VS90COMNTOOLS%vsvars32.bat"
 
 C:\google-all-pairs-similarity-search>nmake -f Makefile.w32
-
-This produces many warnings, but it seems to work OK. We have not
-tested the Windows executable thoroughly.
 
 ===============================================================================
 DATASET FORMAT
