@@ -50,8 +50,8 @@ int main(int argc, char** argv) {
     if (!data.get())
       return 3;
     AllPairs ap;
-    bool result = ap.FindAllSimilarPairs(
-        threshold, data.get(), 800000, 600000, 120000000);
+    bool result =
+        ap.FindAllSimilarPairs(threshold, data.get(), 600000, 120000000);
     if (!result) {
       std::cerr << "ERROR: " << data->GetErrorMessage() << "\n";
       return 4;
