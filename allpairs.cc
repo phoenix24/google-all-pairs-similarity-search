@@ -46,12 +46,12 @@ std::string ToString(uint32_t l) {
 // consistent order. Also assumes that there are no duplicate
 // features.
 inline int CountSharedFeatures(
-    const std::vector<uint32_t>& e1,
-    const std::vector<uint32_t>& e2) {
-  std::vector<uint32_t>::const_iterator it1 = e1.begin();
-  std::vector<uint32_t>::const_iterator it2 = e2.begin();
+    std::vector<uint32_t>::const_iterator it1,
+    const std::vector<uint32_t>::const_iterator it1_end,
+    const uint32_t* it2,
+    const uint32_t* const it2_end) {
   int return_me = 0;
-  while (it1 != e1.end() && it2 != e2.end()) {
+  while (it1 != it1_end && it2 != it2_end) {
     if (*it1 == *it2) {
       ++return_me;
       ++it1;
@@ -118,7 +118,7 @@ void AllPairs::InitScan(uint32_t max_feature_id) {
   inverted_lists_.clear();
   inverted_lists_.resize(max_feature_id);
   for (int i = 0; i < partial_vectors_.size(); ++i) {
-    delete partial_vectors_[i];
+    FreePartialVector(partial_vectors_[i]);
   }
   partial_vectors_.clear();
 }
@@ -190,19 +190,21 @@ void AllPairs::FindMatches(
     PartialVector& il = *(it->first);
     // Compute an upperbound on the # of shared terms
     int shared_terms = it->second.count;
-    shared_terms += il.feature_ids.size();
+    shared_terms += il.size;
     // Compute an upperbound on the square of the score
     double denominator = vector_size * static_cast<double>(il.original_size);
     double score_squared =
       static_cast<double>(shared_terms * shared_terms) / denominator;
     if (score_squared >= t_squared_ - kFudgeFactor) {
-      if (il.feature_ids.size() == 0) {
+      if (il.size == 0) {
         // For this case, the upperbound is precise
         FoundSimilarPair(vector_id, il.id, sqrt(score_squared));
       } else {
         // Need to compute the exact # of shared terms to get the precise score
         ++intersections_;
-        shared_terms = CountSharedFeatures(vec, il.feature_ids) +
+        shared_terms =
+            CountSharedFeatures(
+                vec.begin(), vec.end(), il.feature, il.feature + il.size) +
             it->second.count;
         score_squared = static_cast<double>(
             shared_terms * shared_terms) / denominator;
@@ -233,13 +235,13 @@ void AllPairs::IndexVector(
        static_cast<double>(t_)) -
       kFudgeFactor);
   // Create the partial vector consisting of the unindexed features.
-  PartialVector* partial_vector = new PartialVector(vector_id, size);
+  PartialVector* partial_vector =
+      MakePartialVector(
+          vector_id,
+          size,
+          not_indexed_count,
+          &(current_vector[size - not_indexed_count]));
   partial_vectors_.push_back(partial_vector);
-  if (not_indexed_count > 0) {
-    partial_vector->feature_ids.assign(
-        current_vector.begin() + size - not_indexed_count,
-        current_vector.end());
-  }
   // Put all other features in the inverted index.
   int indexed_size = size - not_indexed_count;
   for (int i = 0; i < indexed_size; ++i) {
@@ -247,4 +249,27 @@ void AllPairs::IndexVector(
       inverted_lists_.resize(current_vector[i] + 1);
     inverted_lists_[current_vector[i]].vectors.push_back(partial_vector);
   }
+}
+
+/*static*/
+AllPairs::PartialVector* AllPairs::MakePartialVector(
+    uint32_t vector_id,
+    int original_size,
+    int size,
+    const uint32_t* begin) {
+  PartialVector* p =
+      static_cast<PartialVector*>(
+          malloc(
+              sizeof(AllPairs::PartialVector) +
+              (sizeof(uint32_t) * size)));
+  p->id = vector_id;
+  p->original_size = original_size;
+  p->size = size;
+  memcpy(p->feature, begin, (sizeof(uint32_t) * size));
+  return p;
+}
+
+/*static*/
+void AllPairs::FreePartialVector(PartialVector* p) {
+  free(p);
 }
