@@ -147,14 +147,20 @@ class AllPairs {
   uint32_t last_vector_size_;
 
   struct PartialVector {
-    PartialVector(uint32_t vector_id, int orig_size)
-        : id(vector_id), original_size(orig_size) {}
-    // We must store the "actual" length of the vector from which
-    // this partial vector was derived.
     uint32_t id;
+    // We store the "actual" length of the vector from which this
+    // partial vector was derived.
     int original_size;
-    std::vector<uint32_t> feature_ids;
+    int size;
+    uint32_t feature[];
   };
+
+  // Factory method for constructing a partial vector object.
+  static PartialVector* MakePartialVector(
+      uint32_t vector_id, int orig_size, int size, const uint32_t* features);
+
+  // Releases memory allocated by the MakePartialVector factory.
+  static void FreePartialVector(PartialVector* free_me);
 
   struct InvertedList {
     InvertedList() : start(0) {}
