@@ -61,22 +61,25 @@ class AllPairs {
 
   AllPairs() {
 #ifndef MICROSOFT
-    candidates_.set_empty_key(ULONG_MAX);
+    candidates_.set_empty_key(0);
 #endif
+  }
+  ~AllPairs() {
+    InitScan(0);
   }
 
   // Finds all pairs of vectors in the "data" stream with cosine
-  // similarity meeting the specified threshold. Assumes the data
-  // stream is opened for read access.  Caller is responsible for
-  // closing the stream.  Returns false if the computation could not
-  // complete successfully. A call to GetErrorMessage() will return a
+  // similarity meeting the specified threshold. Does not assume
+  // ownership of the data stream. Returns false if the computation
+  // could not complete successfully due to data stream failure. A
+  // call to GetErrorMessage() on the data stream object will return a
   // human-readable description of the problem.
   //
-  // The caller can provide an estimate of the max_vector_id and
-  // max_feature_id which will be used to preallocate buffers.  The
-  // correct output will be produced even if the estimates are
-  // inaccurate (provided there is sufficient memory for the buffers
-  // to be allocated to the specified size.)
+  // The caller can provide an estimate of the max_feature_id which
+  // will be used to preallocate buffers.  The correct output will be
+  // produced even if the estimate is inaccurate (provided there is
+  // sufficient memory for the buffers to be allocated to the
+  // specified size.)
   //
   // The caller can also provide a maximum on the number of features
   // that will be stored in ram. This will bound the memory used, at
@@ -87,7 +90,6 @@ class AllPairs {
   bool FindAllSimilarPairs(
       double similarity_threshold,
       DataSourceIterator* data,
-      uint32_t max_vector_id,
       uint32_t max_feature_id,
       uint32_t max_features_in_ram);
 
@@ -110,7 +112,7 @@ class AllPairs {
 
   // Called by FindSimilarPairs before beginning any dataset scan to
   // reset all relevant datastructures.
-  void InitScan(uint32_t max_vector_id, uint32_t max_feature_id);
+  void InitScan(uint32_t max_feature_id);
 
   // Finds all vectors in the inverted index that are similar to the
   // given vector.
@@ -145,9 +147,11 @@ class AllPairs {
   uint32_t last_vector_size_;
 
   struct PartialVector {
-    PartialVector() : original_size(0) {}
+    PartialVector(uint32_t vector_id, int orig_size)
+        : id(vector_id), original_size(orig_size) {}
     // We must store the "actual" length of the vector from which
     // this partial vector was derived.
+    uint32_t id;
     int original_size;
     std::vector<uint32_t> feature_ids;
   };
@@ -155,11 +159,13 @@ class AllPairs {
   struct InvertedList {
     InvertedList() : start(0) {}
     int start;
-    std::vector<uint32_t> vector_ids;
+    std::vector<PartialVector*> vectors;
   };
 
-  std::vector<PartialVector> partial_vectors_;
   std::vector<InvertedList> inverted_lists_;
+
+  // Stores a list of partial vectors so they can be easily deleted.
+  std::vector<PartialVector*> partial_vectors_;
 
   struct Counter {
     Counter() : count(0) {}
@@ -168,11 +174,11 @@ class AllPairs {
   };
 
 #ifdef MICROSOFT
-  typedef stdext::hash_map<uint32_t, Counter> hashmap_t;
-  typedef stdext::hash_map<uint32_t, Counter>::iterator hashmap_iterator_t;
+  typedef stdext::hash_map<PartialVector*, Counter> hashmap_t;
+  typedef stdext::hash_map<PartialVector*, Counter>::iterator hashmap_iterator_t;
 #else
-  typedef google::dense_hash_map<uint32_t, Counter> hashmap_t;
-  typedef google::dense_hash_map<uint32_t, Counter>::iterator
+  typedef google::dense_hash_map<PartialVector*, Counter> hashmap_t;
+  typedef google::dense_hash_map<PartialVector*, Counter>::iterator
   hashmap_iterator_t;
 #endif
   hashmap_t candidates_;

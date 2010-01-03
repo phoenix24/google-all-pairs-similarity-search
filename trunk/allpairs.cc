@@ -70,7 +70,6 @@ inline int CountSharedFeatures(
 bool AllPairs::FindAllSimilarPairs(
     double similarity_threshold,
     DataSourceIterator* data,
-    uint32_t max_vector_id,
     uint32_t max_feature_id,
     uint32_t max_features_in_ram) {
   Init(similarity_threshold);
@@ -78,7 +77,7 @@ bool AllPairs::FindAllSimilarPairs(
   std::vector<uint32_t> current_vector;
   double longest_indexed_vector_size;
   do {
-    InitScan(max_vector_id, max_feature_id);
+    InitScan(max_feature_id);
     uint32_t features_in_ram = 0;
     if (!data->Seek(resume_offset)) {
       return false;
@@ -111,17 +110,17 @@ bool AllPairs::FindAllSimilarPairs(
     }
   } while (resume_offset != 0);
   std::cout << std::flush;
-  InitScan(0, 0);  // clear out the big data structures before returning.
+  InitScan(0);  // clear out the big data structures before returning.
   return true;
 }
 
-void AllPairs::InitScan(
-    uint32_t max_vector_id,
-    uint32_t max_feature_id) {
+void AllPairs::InitScan(uint32_t max_feature_id) {
   inverted_lists_.clear();
   inverted_lists_.resize(max_feature_id);
+  for (int i = 0; i < partial_vectors_.size(); ++i) {
+    delete partial_vectors_[i];
+  }
   partial_vectors_.clear();
-  partial_vectors_.resize(max_vector_id);
 }
 
 void AllPairs::Init(double similarity_threshold) {
@@ -151,19 +150,18 @@ void AllPairs::FindMatches(
       continue;
     InvertedList& il = inverted_lists_[vec[j]];
     // We first advance the starting point.
-    while (il.start < il.vector_ids.size() &&
-           partial_vectors_[il.vector_ids[il.start]].original_size <
-           min_previous_vector_length) {
+    while (il.start < il.vectors.size() &&
+           il.vectors[il.start]->original_size < min_previous_vector_length) {
       ++il.start;
     }
     // Now that we've determined the starting point, we scan the list
     // of vectors to generate the set of candidates with their
     // partially accumulated counts.
-    std::vector<uint32_t>::iterator k = il.vector_ids.begin() + il.start;
-    const std::vector<uint32_t>::iterator end_k = il.vector_ids.end();
+    std::vector<PartialVector*>::iterator k = il.vectors.begin() + il.start;
+    const std::vector<PartialVector*>::iterator end_k = il.vectors.end();
     if (j < new_candidates_possible_end_index) {
       for (; k < end_k; ++k) {
-        assert(*k != vector_id);
+        assert((*k)->id != vector_id);
         candidates_[*k].increment();
       }
     } else {
@@ -173,7 +171,7 @@ void AllPairs::FindMatches(
       // their partial counts.
       hashmap_iterator_t candidate;
       for (; k != end_k; ++k) {
-        assert(*k != vector_id);
+        assert((*k)->id != vector_id);
         candidate = candidates_.find(*k);
         if (candidate != candidates_.end()) {
           candidate->second.increment();
@@ -189,7 +187,7 @@ void AllPairs::FindMatches(
   for (hashmap_iterator_t it = candidates_.begin();
        it != candidates_.end();
        ++it) {
-    PartialVector& il = partial_vectors_[it->first];
+    PartialVector& il = *(it->first);
     // Compute an upperbound on the # of shared terms
     int shared_terms = it->second.count;
     shared_terms += il.feature_ids.size();
@@ -200,7 +198,7 @@ void AllPairs::FindMatches(
     if (score_squared >= t_squared_ - kFudgeFactor) {
       if (il.feature_ids.size() == 0) {
         // For this case, the upperbound is precise
-        FoundSimilarPair(vector_id, it->first, sqrt(score_squared));
+        FoundSimilarPair(vector_id, il.id, sqrt(score_squared));
       } else {
         // Need to compute the exact # of shared terms to get the precise score
         ++intersections_;
@@ -209,7 +207,7 @@ void AllPairs::FindMatches(
         score_squared = static_cast<double>(
             shared_terms * shared_terms) / denominator;
         if (score_squared >= t_squared_ - kFudgeFactor) {
-          FoundSimilarPair(vector_id, it->first, sqrt(score_squared));
+          FoundSimilarPair(vector_id, il.id, sqrt(score_squared));
         }
       }
     }
@@ -235,19 +233,18 @@ void AllPairs::IndexVector(
        static_cast<double>(t_)) -
       kFudgeFactor);
   // Create the partial vector consisting of the unindexed features.
-  if (vector_id >= partial_vectors_.size())
-    partial_vectors_.resize(vector_id + 1);
+  PartialVector* partial_vector = new PartialVector(vector_id, size);
+  partial_vectors_.push_back(partial_vector);
   if (not_indexed_count > 0) {
-    partial_vectors_[vector_id].feature_ids.assign(
+    partial_vector->feature_ids.assign(
         current_vector.begin() + size - not_indexed_count,
         current_vector.end());
   }
-  partial_vectors_[vector_id].original_size = size;
   // Put all other features in the inverted index.
-  size -= not_indexed_count;
-  for (int i = 0; i < size; ++i) {
+  int indexed_size = size - not_indexed_count;
+  for (int i = 0; i < indexed_size; ++i) {
     if (current_vector[i] >= inverted_lists_.size())
       inverted_lists_.resize(current_vector[i] + 1);
-    inverted_lists_[current_vector[i]].vector_ids.push_back(vector_id);
+    inverted_lists_[current_vector[i]].vectors.push_back(partial_vector);
   }
 }

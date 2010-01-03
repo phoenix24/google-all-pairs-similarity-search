@@ -20,10 +20,8 @@
 #include "data-source-iterator.h"
 
 #include <errno.h>
-#include <math.h>
 #include <stdio.h>
 
-#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
