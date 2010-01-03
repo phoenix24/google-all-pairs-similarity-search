@@ -1,4 +1,4 @@
-CFLAGS= -DNDEBUG -Isparsehash-0.7/src -O3 -D_FILE_OFFSET_BITS=64
+CFLAGS= -DNDEBUG -I../google-sparsehash-read-only/src -O3 -D_FILE_OFFSET_BITS=64
 #CFLAGS= -g -Isparsehash-0.7/src -D_FILE_OFFSET_BITS=64
 
 CC = g++
@@ -9,7 +9,7 @@ LIBS =
 
 LINKFLAGS =
 
-OBJS_c = allpairs.cc
+OBJS_c = allpairs.cc data-source-iterator.cc
 OBJS_o = $(OBJS_c:.cc=.o)
 
 ap: $(OBJS_c) $(OBJS_o) main.cc main.o

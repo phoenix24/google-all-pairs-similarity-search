@@ -54,6 +54,8 @@ typedef unsigned __int32  uint32_t;
 #include <google/dense_hash_map>
 #endif
 
+class DataSourceIterator;
+
 class AllPairs {
  public:
 
@@ -84,30 +86,24 @@ class AllPairs {
   // This method may output status & progress messages to stderr.
   bool FindAllSimilarPairs(
       double similarity_threshold,
-      FILE* data,
+      DataSourceIterator* data,
       uint32_t max_vector_id,
       uint32_t max_feature_id,
       uint32_t max_features_in_ram);
 
-  // Returns a human-readable string describing any error condition
-  // encountered. Only call this method after FindAllSimilarPairs
-  // returns false.
-  std::string GetErrorMessage() { return error_; }
-
   // Returns the number of similar pairs found by the last call to
   // FindAllSimilarPairs.
-  long SimilarPairsCount() { return similar_pairs_count_; }
+  long SimilarPairsCount() const { return similar_pairs_count_; }
 
   // Returns the number of pair candidates considered by the last call
   // to FindAllSimilarPairs.
-  long long CandidatesConsidered() { return candidates_considered_; }
+  long long CandidatesConsidered() const { return candidates_considered_; }
 
   // Returns the number of vector intersections performed by the last
   // call to FindSimilarPairs.
-  long long IntersectionsPerformed() { return intersections_; }
+  long long IntersectionsPerformed() const { return intersections_; }
 
  private:
-
   // First method called by FindSimilarPairs for rudimentary variable
   // initialization.
   void Init(double similarity_threshold);
@@ -133,14 +129,6 @@ class AllPairs {
       uint32_t vector_id_1,
       uint32_t vector_id_2,
       double similarity_score);
-
-  // Reads the next input vector from the input file.  Returns -1 on
-  // error, 0 on EOF, and 1 on success.  Checks for many dataset
-  // format errors, but not all of them. For example it does not check
-  // that the a vector's features are duplicate free and are
-  // consistently ordered according to frequency.
-  int NextVector(FILE* data,
-                 std::vector<uint32_t>& input_vector);
 
   double t_;  // stores the similarity threshold
   double t_squared_;

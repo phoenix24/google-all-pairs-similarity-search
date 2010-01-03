@@ -1,11 +1,11 @@
-# "nmake" makefile for relsat on PC with Miscrosoft VC++
+# "nmake" makefile for all-similar-pairs on PC with Miscrosoft VC++
 
 # For optimized executable:
 CFLAGS = /DNDEBUG /DMICROSOFT /O2 /D_FILE_OFFSET_BITS=64
 
 .SUFFIXES: .obj .cc
 
-OBJS_c =  allpairs.cc
+OBJS_c =  allpairs.cc data-source-iterator.cc
 OBJS_o = $(OBJS_c:.cc=.obj)
 
 ap.exe: $(OBJS_c) $(OBJS_o) main.obj main.cc

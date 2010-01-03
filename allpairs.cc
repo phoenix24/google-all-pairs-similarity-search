@@ -20,7 +20,6 @@
 #include "allpairs.h"
 
 #include <assert.h>
-#include <errno.h>
 #include <math.h>
 #include <stdio.h>
 
@@ -29,22 +28,13 @@
 #include <string>
 #include <vector>
 
-
-#ifdef MICROSOFT
-#define fseeko _fseeki64
-#define ftello _ftelli64
-#endif
+#include "data-source-iterator.h"
 
 namespace {
 
 // A fudge factor so that we are conservative in dealing with floating
 // point rounding issues.
 const double kFudgeFactor = .00000001;
-
-// If a vector is encountered with size larger than this constant,
-// then we will barf. This is to protect against memory overflow from
-// improperly formatted binary data.
-const uint32_t kMaxVectorSize = 99999;
 
 std::string ToString(uint32_t l) {
   char buf[30];
@@ -79,7 +69,7 @@ inline int CountSharedFeatures(
 
 bool AllPairs::FindAllSimilarPairs(
     double similarity_threshold,
-    FILE* data,
+    DataSourceIterator* data,
     uint32_t max_vector_id,
     uint32_t max_feature_id,
     uint32_t max_features_in_ram) {
@@ -90,21 +80,20 @@ bool AllPairs::FindAllSimilarPairs(
   do {
     InitScan(max_vector_id, max_feature_id);
     uint32_t features_in_ram = 0;
-    if (fseeko(data, resume_offset, 0)) {
-      error_ = "fseek failed: " +  std::string(strerror(errno));
+    if (!data->Seek(resume_offset)) {
       return false;
     }
     resume_offset = 0;
     int result;
-    while ((result = NextVector(data, current_vector)) > 0) {
+    while ((result = data->Next(&vector_id_, current_vector)) > 0) {
       FindMatches(vector_id_, current_vector);
       if (resume_offset == 0) {
         IndexVector(vector_id_, current_vector);
         features_in_ram += current_vector.size();
         if (features_in_ram > max_features_in_ram) {
-          resume_offset = ftello(data);
-          std::cerr << "; Halting indexing at line " << lines_processed_ <<
-              " and vector id " << vector_id_ << std::endl;
+          resume_offset = data->Tell();
+          std::cerr << "; Halting indexing at vector id " << vector_id_
+                    << std::endl;
           longest_indexed_vector_size =
               static_cast<double>(current_vector.size());
         }
@@ -122,19 +111,17 @@ bool AllPairs::FindAllSimilarPairs(
     }
   } while (resume_offset != 0);
   std::cout << std::flush;
-  InitScan(0,0);  // clear out the big data structures before returning.
+  InitScan(0, 0);  // clear out the big data structures before returning.
   return true;
 }
 
 void AllPairs::InitScan(
     uint32_t max_vector_id,
     uint32_t max_feature_id) {
-  last_vector_size_ = 0;
   inverted_lists_.clear();
   inverted_lists_.resize(max_feature_id);
   partial_vectors_.clear();
   partial_vectors_.resize(max_vector_id);
-  lines_processed_ = 0;
 }
 
 void AllPairs::Init(double similarity_threshold) {
@@ -263,58 +250,4 @@ void AllPairs::IndexVector(
       inverted_lists_.resize(current_vector[i] + 1);
     inverted_lists_[current_vector[i]].vector_ids.push_back(vector_id);
   }
-}
-
-int AllPairs::NextVector(
-    FILE* data,
-    std::vector<uint32_t>& vec) {
-  size_t bytes_read;
-  uint32_t vector_size;
-
-  while ((bytes_read = fread(&vector_id_, 1, 4, data)) == 4) {
-    bytes_read = fread(&vector_size, 1, 4, data);
-    if (bytes_read != 4) {
-      if (ferror(data))
-        break;
-      error_ = "Dataset format error. Partial vector length encountered "
-          "for vector id " + ToString(vector_id_);
-      return -1;
-    }
-    if (vector_size > kMaxVectorSize) {
-      error_ = "Dataset format error. Size of vector id " +
-          ToString(vector_id_) +
-          " exceeds maximum: " +
-          ToString(vector_size);
-      return -1;
-    }
-    if (vector_size < last_vector_size_) {
-      error_ = "Dataset format error. Size of vector id " +
-          ToString(vector_id_) +
-          " is smaller than that of the preceeding vector: " +
-          ToString(vector_size);
-      return -1;
-    }
-    last_vector_size_ = vector_size;
-    vec.resize(vector_size);
-    bytes_read = fread(&(vec[0]), 1, 4 * vector_size, data);
-    if (bytes_read != 4 * vector_size) {
-      if (ferror(data))
-        break;
-      error_ = "Dataset format error. Dataset truncated while reading "
-          "features from vector id " +
-          ToString(vector_id_);
-      return -1;
-    }
-    lines_processed_++;
-    return 1;
-  }
-  if (ferror(data)) {
-    error_ = "Dataset read error, ferror code=" + ToString(ferror(data));
-    return -1;
-  }
-  if (bytes_read != 0) {
-    error_ = "Dataset format error. Partial vector id encountered.";
-    return -1;
-  }
-  return 0;
 }
