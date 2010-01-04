@@ -141,11 +141,6 @@ class AllPairs {
   long long candidates_considered_;
   long long intersections_;
 
-  std::string error_;
-
-  uint32_t vector_id_;
-  uint32_t last_vector_size_;
-
   struct PartialVector {
     uint32_t id;
     // We store the "actual" length of the vector from which this
