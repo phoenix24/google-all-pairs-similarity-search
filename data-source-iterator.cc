@@ -81,7 +81,7 @@ off_t DataSourceIterator::Tell() {
   return ftello(data_);
 }
 
-int DataSourceIterator::Next(uint32_t* vector_id, std::vector<uint32_t>& vec) {
+int DataSourceIterator::Next(uint32_t* vector_id, std::vector<uint32_t>* vec) {
   size_t bytes_read;
   uint32_t vector_size;
 
@@ -109,8 +109,8 @@ int DataSourceIterator::Next(uint32_t* vector_id, std::vector<uint32_t>& vec) {
       return -1;
     }
     last_vector_size_ = vector_size;
-    vec.resize(vector_size);
-    bytes_read = fread(&(vec[0]), 1, 4 * vector_size, data_);
+    vec->resize(vector_size);
+    bytes_read = fread(&((*vec)[0]), 1, 4 * vector_size, data_);
     if (bytes_read != 4 * vector_size) {
       if (ferror(data_))
         break;
