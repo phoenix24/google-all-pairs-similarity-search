@@ -83,15 +83,16 @@ bool AllPairs::FindAllSimilarPairs(
       return false;
     }
     resume_offset = 0;
+    uint32_t vector_id;
     int result;
-    while ((result = data->Next(&vector_id_, current_vector)) > 0) {
-      FindMatches(vector_id_, current_vector);
+    while ((result = data->Next(&vector_id, &current_vector)) > 0) {
+      FindMatches(vector_id, current_vector);
       if (resume_offset == 0) {
-        IndexVector(vector_id_, current_vector);
+        IndexVector(vector_id, current_vector);
         features_in_ram += current_vector.size();
         if (features_in_ram > max_features_in_ram) {
           resume_offset = data->Tell();
-          std::cerr << "; Halting indexing at vector id " << vector_id_
+          std::cerr << "; Halting indexing at vector id " << vector_id
                     << std::endl;
           longest_indexed_vector_size =
               static_cast<double>(current_vector.size());
@@ -126,7 +127,6 @@ void AllPairs::InitScan(uint32_t max_feature_id) {
 void AllPairs::Init(double similarity_threshold) {
   t_ = similarity_threshold;
   t_squared_ = t_ * t_;
-  vector_id_ = 0;
   similar_pairs_count_ = 0;
   error_.clear();
   candidates_considered_ = intersections_ = 0;

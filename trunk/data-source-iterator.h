@@ -68,7 +68,7 @@ class DataSourceIterator {
   // format errors, but not all of them. For example it does not check
   // that the a vector's features are duplicate free and are
   // consistently ordered according to frequency.
-  int Next(uint32_t* vector_id_, std::vector<uint32_t>& input_vector);
+  int Next(uint32_t* vector_id_, std::vector<uint32_t>* input_vector);
 
   bool Seek(off_t seek_offset);
   off_t Tell();
