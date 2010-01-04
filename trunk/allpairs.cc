@@ -21,11 +21,8 @@
 
 #include <assert.h>
 #include <math.h>
-#include <stdio.h>
 
-#include <algorithm>
 #include <iostream>
-#include <string>
 #include <vector>
 
 #include "data-source-iterator.h"
