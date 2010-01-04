@@ -139,6 +139,13 @@ class AllPairs {
   long long intersections_;
 
   struct PartialVector {
+    // Do not use this constructor directly. Use MakePartialVector().
+    PartialVector(
+        uint32_t vector_id,
+        int original_size,
+        int partial_size,
+        const uint32_t* begin);
+
     uint32_t id;
     // We store the "actual" length of the vector from which this
     // partial vector was derived.

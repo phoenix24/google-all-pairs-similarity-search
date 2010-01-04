@@ -241,25 +241,30 @@ void AllPairs::IndexVector(
   }
 }
 
+AllPairs::PartialVector::PartialVector(
+    uint32_t vector_id,
+    int orig_size,
+    int partial_size,
+    const uint32_t* begin)
+    : id(vector_id),
+      original_size(orig_size),
+      size(partial_size) {
+  memcpy(feature, begin, (sizeof(uint32_t) * partial_size));
+}
+
 /*static*/
 AllPairs::PartialVector* AllPairs::MakePartialVector(
     uint32_t vector_id,
     int original_size,
     int size,
     const uint32_t* begin) {
-  PartialVector* p =
-      static_cast<PartialVector*>(
-          malloc(
-              sizeof(AllPairs::PartialVector) +
-              (sizeof(uint32_t) * size)));
-  p->id = vector_id;
-  p->original_size = original_size;
-  p->size = size;
-  memcpy(p->feature, begin, (sizeof(uint32_t) * size));
-  return p;
+  size_t object_size =
+      sizeof(AllPairs::PartialVector) + (sizeof(uint32_t) * size);
+  return new (::operator new(object_size))
+      PartialVector(vector_id, original_size, size, begin);
 }
 
 /*static*/
 void AllPairs::FreePartialVector(PartialVector* p) {
-  free(p);
+  ::operator delete(p);
 }
