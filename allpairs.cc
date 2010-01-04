@@ -128,7 +128,6 @@ void AllPairs::Init(double similarity_threshold) {
   t_ = similarity_threshold;
   t_squared_ = t_ * t_;
   similar_pairs_count_ = 0;
-  error_.clear();
   candidates_considered_ = intersections_ = 0;
 }
 
