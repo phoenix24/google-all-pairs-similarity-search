@@ -41,9 +41,6 @@
 #ifndef _ALLPAIRS_H_
 #define _ALLPAIRS_H_
 
-#include <stdio.h>
-
-#include <string>
 #include <vector>
 
 #ifdef MICROSOFT   // MS VC++ specific code
