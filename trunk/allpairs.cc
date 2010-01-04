@@ -36,12 +36,6 @@ namespace {
 // point rounding issues.
 const double kFudgeFactor = .00000001;
 
-std::string ToString(uint32_t l) {
-  char buf[30];
-  sprintf(buf, "%lu", l);
-  return std::string(buf);
-}
-
 // Intersect two vectors. Assumes features appear in both vectors in a
 // consistent order. Also assumes that there are no duplicate
 // features.
