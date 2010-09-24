@@ -51,10 +51,9 @@ typedef unsigned __int32  uint32_t;
 #include <google/dense_hash_map>
 #ifdef OLD_HASH   // This specialization seems needed for mac osx based g++
 namespace __gnu_cxx {
-template<class T> struct hash {};
-  template<class T> struct hash<T*> {
-    size_t operator()(T* __x) const { return reinterpret_cast<size_t>(__x); }
-  };
+template<class T> struct hash<T*> {
+  size_t operator()(T* __x) const { return reinterpret_cast<size_t>(__x); }
+};
 }
 #endif  // OLD_HASH
 #endif
