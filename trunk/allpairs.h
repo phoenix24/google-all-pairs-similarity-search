@@ -49,6 +49,11 @@ typedef unsigned __int32  uint32_t;
 #else
 #include <stdint.h>
 #include <google/dense_hash_map>
+namespace __gnu_cxx {
+  template<class T> struct hash<T*> {
+    size_t operator()(T* __x) const { return reinterpret_cast<size_t>(__x); }
+  };
+}
 #endif
 
 class DataSourceIterator;
