@@ -131,10 +131,11 @@ void AllPairs::FindMatches(
   candidates_.clear_no_resize();
 #endif
   double vector_size = static_cast<double>(vec.size());
-  int min_previous_vector_length =
-      static_cast<int>((vector_size * t_squared_) - kFudgeFactor);
-  int new_candidates_possible_end_index =
-      vec.size() - min_previous_vector_length + 1;
+  double minsize = vector_size * t_squared_;
+  const int min_previous_vector_length =
+    static_cast<int>(minsize - kFudgeFactor) + 1;
+  const int new_candidates_possible_end_index =
+    static_cast<int>(vector_size - minsize - kFudgeFactor) + 1;
   for (int j = 0; j < vec.size(); ++j) {
     if (vec[j] >= inverted_lists_.size())
       continue;
@@ -233,7 +234,7 @@ void AllPairs::IndexVector(
           &(current_vector[size - not_indexed_count]));
   partial_vectors_.push_back(partial_vector);
   // Put all other features in the inverted index.
-  int indexed_size = size - not_indexed_count;
+  const int indexed_size = size - not_indexed_count;
   for (int i = 0; i < indexed_size; ++i) {
     if (current_vector[i] >= inverted_lists_.size())
       inverted_lists_.resize(current_vector[i] + 1);
