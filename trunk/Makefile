@@ -1,5 +1,5 @@
-CFLAGS= -DNDEBUG -I../google-sparsehash-read-only/src -O3 -D_FILE_OFFSET_BITS=64
-#CFLAGS= -g -I../google-sparsehash-read-only/src -D_FILE_OFFSET_BITS=64
+CFLAGS= -DNDEBUG -I../sparsehash-read-only/src -O3 -D_FILE_OFFSET_BITS=64
+#CFLAGS= -g -I../sparsehash-read-only/src -D_FILE_OFFSET_BITS=64
 
 CC = g++
 

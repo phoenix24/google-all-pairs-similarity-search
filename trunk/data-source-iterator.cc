@@ -40,7 +40,7 @@ const uint32_t kMaxVectorSize = 99999;
 
 std::string ToString(uint32_t l) {
   char buf[30];
-  sprintf(buf, "%lu", l);
+  sprintf(buf, "%u", l);
   return std::string(buf);
 }
 
