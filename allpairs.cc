@@ -199,7 +199,7 @@ void AllPairs::FindMatches(
                 vec.begin(), vec.end(), il.feature, il.feature + il.size) +
             it->second.count;
         score_squared = static_cast<double>(shared_terms);
-		score_squared = score_squared * score_squared / denominator;
+        score_squared = score_squared * score_squared / denominator;
         if (score_squared >= t_squared_ - kFudgeFactor) {
           FoundSimilarPair(vector_id, il.id, sqrt(score_squared));
         }
