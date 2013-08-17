@@ -59,12 +59,23 @@ inline int CountSharedFeatures(
 
 }  // namespace
 
+AllPairs::AllPairs() : sparse_vector_(0) {
+#ifndef MICROSOFT
+  candidates_.set_empty_key(0);
+#endif
+}
+
+AllPairs::~AllPairs() {
+  InitScan(0);
+  delete [] sparse_vector_;
+}
+
 bool AllPairs::FindAllSimilarPairs(
     double similarity_threshold,
     DataSourceIterator* data,
     uint32_t max_feature_id,
     uint32_t max_features_in_ram) {
-  Init(similarity_threshold);
+  Init(similarity_threshold, max_feature_id);
   off_t resume_offset = 0;
   std::vector<uint32_t> current_vector;
   double longest_indexed_vector_size;
@@ -116,11 +127,13 @@ void AllPairs::InitScan(uint32_t max_feature_id) {
   partial_vectors_.clear();
 }
 
-void AllPairs::Init(double similarity_threshold) {
+void AllPairs::Init(double similarity_threshold, uint32_t max_feature_id) {
   t_ = similarity_threshold;
   t_squared_ = t_ * t_;
   similar_pairs_count_ = 0;
   candidates_considered_ = intersections_ = 0;
+  sparse_vector_ = new bool[max_feature_id + 1];
+  memset(sparse_vector_, 0, sizeof(bool) * (max_feature_id + 1));
 }
 
 void AllPairs::FindMatches(
@@ -176,6 +189,7 @@ void AllPairs::FindMatches(
   // counts, we determine which candidates can potentially meet the
   // threshold, and for those than can, we perform a list intersection
   // to compute the unaccumulated portion of the score.
+  PopulateSparseVector(vec);
   for (hashmap_iterator_t it = candidates_.begin();
        it != candidates_.end();
        ++it) {
@@ -195,8 +209,8 @@ void AllPairs::FindMatches(
         // Need to compute the exact # of shared terms to get the precise score
         ++intersections_;
         shared_terms =
-            CountSharedFeatures(
-                vec.begin(), vec.end(), il.feature, il.feature + il.size) +
+          CountSharedFeaturesUsingSparseVector(
+              il.feature, il.feature + il.size) +
             it->second.count;
         score_squared = static_cast<double>(shared_terms);
         score_squared = score_squared * score_squared / denominator;
@@ -206,6 +220,7 @@ void AllPairs::FindMatches(
       }
     }
   }
+  ClearSparseVector(vec);
 }
 
 void AllPairs::FoundSimilarPair(
@@ -252,6 +267,37 @@ AllPairs::PartialVector::PartialVector(
       original_size(orig_size),
       size(partial_size) {
   memcpy(feature, begin, (sizeof(uint32_t) * partial_size));
+}
+
+void AllPairs::PopulateSparseVector(
+    const std::vector<uint32_t>& vec) {
+  const std::vector<uint32_t>::const_iterator end = vec.end();
+  for (std::vector<uint32_t>::const_iterator it = vec.begin();
+       it != end;
+       ++it) {
+    sparse_vector_[*it] = true;
+  }
+}
+
+void AllPairs::ClearSparseVector(
+    const std::vector<uint32_t>& vec) {
+  const std::vector<uint32_t>::const_iterator end = vec.end();
+  for (std::vector<uint32_t>::const_iterator it = vec.begin();
+       it != end;
+       ++it) {
+    sparse_vector_[*it] = false;
+  }
+}
+
+inline int AllPairs::CountSharedFeaturesUsingSparseVector(
+      const uint32_t* it,
+      const uint32_t* const it_end) {
+  int return_me = 0;
+  for (; it != it_end; ++it) {
+    if (sparse_vector_[*it])
+      ++return_me;
+  }
+  return return_me;
 }
 
 /*static*/
