@@ -56,14 +56,8 @@ class DataSourceIterator;
 class AllPairs {
  public:
 
-  AllPairs() {
-#ifndef MICROSOFT
-    candidates_.set_empty_key(0);
-#endif
-  }
-  ~AllPairs() {
-    InitScan(0);
-  }
+  AllPairs();
+  ~AllPairs();
 
   // Finds all pairs of vectors in the "data" stream with cosine
   // similarity meeting the specified threshold. Does not assume
@@ -105,7 +99,7 @@ class AllPairs {
  private:
   // First method called by FindSimilarPairs for rudimentary variable
   // initialization.
-  void Init(double similarity_threshold);
+  void Init(double similarity_threshold, uint32_t max_feature_id);
 
   // Called by FindSimilarPairs before beginning any dataset scan to
   // reset all relevant datastructures.
@@ -129,8 +123,17 @@ class AllPairs {
       uint32_t vector_id_2,
       double similarity_score);
 
+  void PopulateSparseVector(
+	  const std::vector<uint32_t>& input_vector);
+  void ClearSparseVector(
+      const std::vector<uint32_t>& input_vector);
+  int CountSharedFeaturesUsingSparseVector(
+      const uint32_t* it2,
+      const uint32_t* const it2_end);
+
   double t_;  // stores the similarity threshold
   double t_squared_;
+  bool* sparse_vector_;
 
   // Stats variables.
   long similar_pairs_count_;
