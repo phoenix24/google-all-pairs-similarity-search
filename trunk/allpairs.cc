@@ -149,8 +149,8 @@ void AllPairs::FindMatches(
     // Now that we've determined the starting point, we scan the list
     // of vectors to generate the set of candidates with their
     // partially accumulated counts.
-    std::vector<PartialVector*>::iterator k = il.vectors.begin() + il.start;
-    const std::vector<PartialVector*>::iterator end_k = il.vectors.end();
+    std::vector<PartialVector*>::const_iterator k = il.vectors.begin() + il.start;
+    const std::vector<PartialVector*>::const_iterator end_k = il.vectors.end();
     if (j < new_candidates_possible_end_index) {
       for (; k < end_k; ++k) {
         assert((*k)->id != vector_id);
@@ -198,8 +198,8 @@ void AllPairs::FindMatches(
             CountSharedFeatures(
                 vec.begin(), vec.end(), il.feature, il.feature + il.size) +
             it->second.count;
-        score_squared = static_cast<double>(
-            shared_terms * shared_terms) / denominator;
+        score_squared = static_cast<double>(shared_terms);
+		score_squared = score_squared * score_squared / denominator;
         if (score_squared >= t_squared_ - kFudgeFactor) {
           FoundSimilarPair(vector_id, il.id, sqrt(score_squared));
         }
