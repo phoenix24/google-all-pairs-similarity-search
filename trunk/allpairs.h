@@ -59,28 +59,29 @@ class AllPairs {
   AllPairs();
   ~AllPairs();
 
-  // Finds all pairs of vectors in the "data" stream with cosine
-  // similarity meeting the specified threshold. Does not assume
-  // ownership of the data stream. Returns false if the computation
-  // could not complete successfully due to data stream failure. A
-  // call to GetErrorMessage() on the data stream object will return a
-  // human-readable description of the problem.
+  // Finds and outputs to stdout all pairs of similar vectors in the input.
+  // Returns false if the computation could not complete successfully due to an
+  // error from the provided data source iterator.
   //
-  // The caller can provide an estimate of the max_feature_id which
-  // will be used to preallocate buffers.  The correct output will be
-  // produced even if the estimate is inaccurate (provided there is
-  // sufficient memory for the buffers to be allocated to the
-  // specified size.)
+  // iterator is the iterator which provides the vectors from the input data
+  // source. This method does not assume ownership of this object
+  // 
+  // similarity_threshold specifies the cosine similarity above which two
+  // vectors will be considered similar.
   //
-  // The caller can also provide a maximum on the number of features
-  // that will be stored in ram. This will bound the memory used, at
-  // the expense of extra scans of the dataset should it contain more
-  // features than the maximum.
+  // max_feature_id is the maximum value of any feature identifier in the input
+  // stream.
   //
-  // This method may output status & progress messages to stderr.
+  // max_features_in_ram is a maximum on the number of features that will be
+  // stored in ram. This will bound the memory used, at the expense of extra
+  // scans of the dataset should it contain more features than the maximum.
+  //
+  //
+  // This method outputs progress messages and a summary of statistics to
+  // stderr.
   bool FindAllSimilarPairs(
       double similarity_threshold,
-      DataSourceIterator* data,
+      DataSourceIterator* iterator,
       uint32_t max_feature_id,
       uint32_t max_features_in_ram);
 
@@ -123,14 +124,6 @@ class AllPairs {
       uint32_t vector_id_2,
       double similarity_score);
 
-  void PopulateSparseVector(
-	  const std::vector<uint32_t>& input_vector);
-  void ClearSparseVector(
-      const std::vector<uint32_t>& input_vector);
-  int CountSharedFeaturesUsingSparseVector(
-      const uint32_t* it2,
-      const uint32_t* const it2_end);
-
   double t_;  // stores the similarity threshold
   double t_squared_;
   bool* sparse_vector_;
@@ -157,6 +150,27 @@ class AllPairs {
     uint32_t feature[];
   };
 
+  // A dense vector representation that is allocated only once and gets re-used
+  // by class DenseVector.
+  bool* dense_vector_array_;  
+
+  class DenseVector {
+  public:
+    // input_vector is the sparse vector which is converted into dense vector
+    // format using the provided dense_vector_array_.  A precondition on
+    // dense_vector_array_ is that it is empty (e.g. all values are set to
+    // false).  The DenseVector destructor will ensure the dense_vector_array_
+    // is empty upon destruction.
+    DenseVector(const std::vector<uint32_t>& input_vector, bool* dense_vector_array_);
+    ~DenseVector();
+    int CountSharedFeatures(
+        const uint32_t* it2,
+        const uint32_t* const it2_end);
+  private:
+    const std::vector<uint32_t>& vec_;
+    bool* dense_vector_array_;
+  };
+
   // Factory method for constructing a partial vector object.
   static PartialVector* MakePartialVector(
       uint32_t vector_id, int orig_size, int size, const uint32_t* features);
@@ -175,18 +189,12 @@ class AllPairs {
   // Stores a list of partial vectors so they can be easily deleted.
   std::vector<PartialVector*> partial_vectors_;
 
-  struct Counter {
-    Counter() : count(0) {}
-    void increment() { ++count; }
-    int count;
-  };
-
 #ifdef MICROSOFT
-  typedef stdext::hash_map<PartialVector*, Counter> hashmap_t;
-  typedef stdext::hash_map<PartialVector*, Counter>::iterator hashmap_iterator_t;
+  typedef stdext::hash_map<PartialVector*, int> hashmap_t;
+  typedef stdext::hash_map<PartialVector*, int>::iterator hashmap_iterator_t;
 #else
-  typedef google::dense_hash_map<PartialVector*, Counter> hashmap_t;
-  typedef google::dense_hash_map<PartialVector*, Counter>::iterator
+  typedef google::dense_hash_map<PartialVector*, int> hashmap_t;
+  typedef google::dense_hash_map<PartialVector*, int>::iterator
   hashmap_iterator_t;
 #endif
   hashmap_t candidates_;

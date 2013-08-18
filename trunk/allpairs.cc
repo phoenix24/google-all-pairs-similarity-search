@@ -59,7 +59,7 @@ inline int CountSharedFeatures(
 
 }  // namespace
 
-AllPairs::AllPairs() : sparse_vector_(0) {
+AllPairs::AllPairs() : dense_vector_array_(0) {
 #ifndef MICROSOFT
   candidates_.set_empty_key(0);
 #endif
@@ -67,12 +67,12 @@ AllPairs::AllPairs() : sparse_vector_(0) {
 
 AllPairs::~AllPairs() {
   InitScan(0);
-  delete [] sparse_vector_;
+  delete [] dense_vector_array_;
 }
 
 bool AllPairs::FindAllSimilarPairs(
     double similarity_threshold,
-    DataSourceIterator* data,
+    DataSourceIterator* iterator,
     uint32_t max_feature_id,
     uint32_t max_features_in_ram) {
   Init(similarity_threshold, max_feature_id);
@@ -82,19 +82,19 @@ bool AllPairs::FindAllSimilarPairs(
   do {
     InitScan(max_feature_id);
     uint32_t features_in_ram = 0;
-    if (!data->Seek(resume_offset)) {
+    if (!iterator->Seek(resume_offset)) {
       return false;
     }
     resume_offset = 0;
     uint32_t vector_id;
     int result;
-    while ((result = data->Next(&vector_id, &current_vector)) > 0) {
+    while ((result = iterator->Next(&vector_id, &current_vector)) > 0) {
       FindMatches(vector_id, current_vector);
       if (resume_offset == 0) {
         IndexVector(vector_id, current_vector);
         features_in_ram += current_vector.size();
         if (features_in_ram > max_features_in_ram) {
-          resume_offset = data->Tell();
+          resume_offset = iterator->Tell();
           std::cerr << "; Halting indexing at vector id " << vector_id
                     << std::endl;
           longest_indexed_vector_size =
@@ -132,8 +132,9 @@ void AllPairs::Init(double similarity_threshold, uint32_t max_feature_id) {
   t_squared_ = t_ * t_;
   similar_pairs_count_ = 0;
   candidates_considered_ = intersections_ = 0;
-  sparse_vector_ = new bool[max_feature_id + 1];
-  memset(sparse_vector_, 0, sizeof(bool) * (max_feature_id + 1));
+  delete dense_vector_array_;
+  dense_vector_array_ = new bool[max_feature_id + 1];
+  memset(dense_vector_array_, 0, sizeof(bool) * (max_feature_id + 1));
 }
 
 void AllPairs::FindMatches(
@@ -167,7 +168,7 @@ void AllPairs::FindMatches(
     if (j < new_candidates_possible_end_index) {
       for (; k < end_k; ++k) {
         assert((*k)->id != vector_id);
-        candidates_[*k].increment();
+        candidates_[*k]++;
       }
     } else {
       // At this point any "new" candidates cannot possibly meet the
@@ -179,7 +180,7 @@ void AllPairs::FindMatches(
         assert((*k)->id != vector_id);
         candidate = candidates_.find(*k);
         if (candidate != candidates_.end()) {
-          candidate->second.increment();
+          candidate->second++;
         }
       }
     }
@@ -189,13 +190,13 @@ void AllPairs::FindMatches(
   // counts, we determine which candidates can potentially meet the
   // threshold, and for those than can, we perform a list intersection
   // to compute the unaccumulated portion of the score.
-  PopulateSparseVector(vec);
+  DenseVector dense_vec(vec, dense_vector_array_);
   for (hashmap_iterator_t it = candidates_.begin();
        it != candidates_.end();
        ++it) {
     PartialVector& il = *(it->first);
     // Compute an upperbound on the # of shared terms
-    int shared_terms = it->second.count;
+    int shared_terms = it->second;
     shared_terms += il.size;
     // Compute an upperbound on the square of the score
     double denominator = vector_size * static_cast<double>(il.original_size);
@@ -209,9 +210,8 @@ void AllPairs::FindMatches(
         // Need to compute the exact # of shared terms to get the precise score
         ++intersections_;
         shared_terms =
-          CountSharedFeaturesUsingSparseVector(
-              il.feature, il.feature + il.size) +
-            it->second.count;
+          dense_vec.CountSharedFeatures(il.feature, il.feature + il.size) +
+          it->second;
         score_squared = static_cast<double>(shared_terms);
         score_squared = score_squared * score_squared / denominator;
         if (score_squared >= t_squared_ - kFudgeFactor) {
@@ -220,7 +220,6 @@ void AllPairs::FindMatches(
       }
     }
   }
-  ClearSparseVector(vec);
 }
 
 void AllPairs::FoundSimilarPair(
@@ -269,32 +268,34 @@ AllPairs::PartialVector::PartialVector(
   memcpy(feature, begin, (sizeof(uint32_t) * partial_size));
 }
 
-void AllPairs::PopulateSparseVector(
-    const std::vector<uint32_t>& vec) {
+AllPairs::DenseVector::DenseVector(
+    const std::vector<uint32_t>& vec,
+    bool* dense_vector_array)
+  : vec_(vec),
+    dense_vector_array_(dense_vector_array) {
   const std::vector<uint32_t>::const_iterator end = vec.end();
   for (std::vector<uint32_t>::const_iterator it = vec.begin();
        it != end;
        ++it) {
-    sparse_vector_[*it] = true;
+    dense_vector_array_[*it] = true;
   }
 }
 
-void AllPairs::ClearSparseVector(
-    const std::vector<uint32_t>& vec) {
-  const std::vector<uint32_t>::const_iterator end = vec.end();
-  for (std::vector<uint32_t>::const_iterator it = vec.begin();
+AllPairs::DenseVector::~DenseVector() {
+  const std::vector<uint32_t>::const_iterator end = vec_.end();
+  for (std::vector<uint32_t>::const_iterator it = vec_.begin();
        it != end;
-       ++it) {
-    sparse_vector_[*it] = false;
+    ++it) {
+    dense_vector_array_[*it] = false;
   }
 }
 
-inline int AllPairs::CountSharedFeaturesUsingSparseVector(
+inline int AllPairs::DenseVector::CountSharedFeatures(
       const uint32_t* it,
       const uint32_t* const it_end) {
   int return_me = 0;
   for (; it != it_end; ++it) {
-    if (sparse_vector_[*it])
+    if (dense_vector_array_[*it])
       ++return_me;
   }
   return return_me;
