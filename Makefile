@@ -1,5 +1,6 @@
 CFLAGS= -DNDEBUG -I../sparsehash-read-only/src -O3 -D_FILE_OFFSET_BITS=64
-#CFLAGS= -g -I../sparsehash-read-only/src -D_FILE_OFFSET_BITS=64
+
+SFLAGS= -shared -fPIC
 
 CC = g++
 
@@ -8,6 +9,8 @@ CC = g++
 LIBS =
 
 LINKFLAGS =
+
+PYTHON_INCLUDES = $(shell python-config --includes)
 
 OBJS_c = allpairs.cc data-source-iterator.cc
 OBJS_o = $(OBJS_c:.cc=.o)
@@ -21,8 +24,13 @@ allpairs.o: allpairs.h
 
 main.o: $(OBJS_o)
 
+python-swig:
+	swig -c++ -python allpairs.i
+	$(CC) $(CFLAGS) $(SFLAGS) $(PYTHON_INCLUDES) -c allpairs.cc data-source-iterator.cc allpairs_wrap.cxx
+	$(CC) $(CFLAGS) $(SFLAGS) allpairs.o data-source-iterator.o allpairs_wrap.o -o _allpairs.so
+
 .cc.o:
 	$(CC) $(CFLAGS) -c $<
 
 clean:
-	rm ap *.o
+	rm ap *.o *.cxx *.so *.py *.pyc
