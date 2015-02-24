@@ -33,4 +33,4 @@ python-swig:
 	$(CC) $(CFLAGS) -c $<
 
 clean:
-	rm ap *.o *.cxx *.so *.py *.pyc
+	rm ap *.o *.so *.pyc
