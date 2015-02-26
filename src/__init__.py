@@ -1,0 +1,1 @@
+from allpairs import *
